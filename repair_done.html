@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>飛騰家電 - 報修紀錄</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-left">
+            <img src="logo1.png" alt="飛騰家電logo" class="logo" />
+            <span class="username">歡迎，會員名字</span>
+        </div>
+        <div class="nav-right">
+            <a href="home.html" class="nav-link">首頁</a>
+            <a href="repair_pending.html" class="nav-link">報修</a>
+            <a href="repair_checking.html" class="nav-link">報修查詢</a>
+            <a href="repair_done.html" class="nav-link">報修紀錄</a>
+            <a href="history.html" class="nav-link">購買紀錄</a>
+            <a href="info.html" class="nav-link">會員資料</a>
+            <a href="#" class="nav-link" onclick="logout()">登出</a>
+        </div>
+        <!-- 手機版本 -->
+        <div class="mobile-menu">
+            <button id="menu-toggle">☰</button>
+            <div id="mobile-dropdown" class="mobile-dropdown">
+                <a href="home.html">首頁</a>
+                <a href="repair_checking.html">報修</a>
+                <a href="repair_pending.html">報修查詢</a>
+                <a href="repair_done.html">報修紀錄</a>
+                <a href="history.html">購買歷史</a>
+                <a href="info.html">會員資料</a>
+                <a href="index.html">登出</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-title">報修紀錄</div>
+
+    <div class="query-content" id="repair-container">
+        
+    </div>
+    <script>
+        window.onload = async function () {
+            const phone = localStorage.getItem('userName');
+            if (!phone) {
+                alert('請先登入');
+                window.location.href = 'index.html';
+                return;
+            }
+        
+            const container = document.querySelector('#repair-container');
+            container.innerHTML = '<p>載入中，請稍候...</p>';
+        
+            try {
+                // 4. 呼叫 API
+                const response = await fetch('/api/proxy-repair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ Account_Name: phone })
+                });
+        
+                const result = await response.json();
+                console.log('API 回傳資料：', result);
+        
+                // 5. 處理資料
+                if (response.ok && Array.isArray(result) && result.length > 0) {
+                    container.innerHTML = '';
+                    result.forEach(repair => {
+                        const repairBox = document.createElement('div');
+                        repairBox.className = 'info-box';
+                        repairBox.innerHTML = `
+                            <p>維修單號：${repair.Repair_No || ''}</p>
+                            <p>產品名稱：${repair.Product_Name || ''}</p>
+                            <p>送修日期：${repair.Repair_Date || ''}</p>
+                            <p>故障原因：${repair.Failure_Cause || ''}</p>
+                            <p>目前狀態：${repair.Status || ''}</p>
+                            <hr>
+                        `;
+                        container.appendChild(repairBox);
+                    });
+                } else {
+                    document.querySelector('#repair-container').innerHTML = '<p>查無報修資料</p>';
+                }
+            } catch (error) {
+                console.error('查詢失敗:', error);
+                document.querySelector('#repair-container').innerHTML = '<p>發生錯誤，請稍後再試</p>';
+            }
+        }
+    </script>
+    <script>
+        const toggleButton = document.getElementById('menu-toggle');
+        const dropdown = document.getElementById('mobile-dropdown');
+    
+        toggleButton.addEventListener('click', () => {
+          dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+        });
+    </script>
+    <script src="welcome-username.js"></script>
+    <script src="logout.js"></script>
+</body>
+</html>

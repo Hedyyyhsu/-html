@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>飛騰家電 - 報修</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-left">
+            <img src="logo1.png" alt="飛騰家電logo" class="logo" />
+            <span class="username">歡迎，會員名字</span>
+        </div>
+        <div class="nav-right">
+            <a href="home.html" class="nav-link">首頁</a>
+            <a href="repair_pending.html" class="nav-link">報修</a>
+            <a href="repair_checking.html" class="nav-link">報修查詢</a>
+            <a href="repair_done.html" class="nav-link">報修紀錄</a>
+            <a href="history.html" class="nav-link">購買紀錄</a>
+            <a href="info.html" class="nav-link">會員資料</a>
+            <a href="#" class="nav-link" onclick="logout()">登出</a>
+        </div>
+
+        <!-- 手機版的選單 -->
+        <div class="mobile-menu">
+            <button id="menu-toggle">☰</button>
+            <div id="mobile-dropdown" class="mobile-dropdown">
+                <a href="home.html">首頁</a>
+                <a href="repair_pending.html">報修</a>
+                <a href="repair_checking.html">報修查詢</a>
+                <a href="repair_done.html">報修紀錄</a>
+                <a href="history.html">購買歷史</a>
+                <a href="info.html">會員資料</a>
+                <a href="index.html">登出</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-title">購買紀錄</div>
+
+    <div class="query-content">
+      
+        <div class="info-box">
+            <p>訂單編號：</p>
+            <p>訂單狀態：</p>
+            <p>購買日期：</p>
+            <p>收件人：</p>
+            <p>收件地址：</p>
+            <p>運送方式：</p>
+            <p>運送日期：</p>
+            <p>付款方式：</p>
+            <p>產品金額：</p>
+            <p>運費：</p>
+            <p>總金額：</p>
+        </div>
+    </div>
+    <script>
+        window.onload = async function () {
+            const phone = localStorage.getItem('userName');
+            if(!phone){
+                alert('請先登入');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            const infoBox = document.querySelector('.info-box');
+            infoBox.innerHTML = '<p>載入中，請稍候...</p>';
+
+            const cacheKey = `orderHistory_${phone}`;
+            const cachedData = localStorage.getItem(cacheKey);
+
+            if (cachedData) {
+                const parsed = JSON.parse(cachedData);
+                orders(parsed.data);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/proxy-orderhistory', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ Account_Name: phone })
+                });
+
+                const result = await response.json();
+                console.log('API 回傳資料：', result);
+
+                if (response.ok && Array.isArray(result) && result.length > 0) {
+                    localStorage.setItem(cacheKey, JSON.stringify({
+                        timestamp: Date.now(),
+                        data: result
+                    }));
+                    orders(result);
+                } else {
+                    infoBox.innerHTML = '<p>無訂單資料</p>';
+                }
+            } catch (error) {
+                console.error('查詢失敗:', error);
+                infoBox.innerHTML = '<p>發生錯誤，請稍後再試</p>';
+            }
+
+            function orders(data) {
+                infoBox.innerHTML = '';
+                data.forEach(order => {
+                    const fullAddress = `${order.Receiver_City}${order.Receiver_District}${order.Receiver_Address}`;
+                    const orderItem = `
+                        <div class="orderItem">
+                            <p>訂單編號：${order.Order_No || ''}</p>
+                            <p>訂單狀態：${order.Order_Status || ''}</p>
+                            <p>訂購日期：${order.OrderEstablishTime || ''}</p>
+                            <p>收件人：${order.Receiver_Name || ''}</p>
+                            <p>收件地址：${fullAddress || ''}</p>
+                            <p>運送方式：${order.ShippingMethod || ''}</p>
+                            <p>運送日期：${order.DeliveryTime|| ''}</p>
+                            <p>付款方式：${order.PaymentMethod || ''}</p>
+                            <p>產品金額：${order.TotalProductPrice || ''}</p>
+                            <p>運費：${order.ShippingFee || ''}</p>
+                            <p>總金額：${order.TotalPrice || ''}</p>
+                            <hr>
+                        </div>
+                    `;
+                    infoBox.innerHTML += orderItem;
+                });
+            }
+        }
+    </script>
+    <script>
+        const toggleButton = document.getElementById('menu-toggle');
+        const dropdown = document.getElementById('mobile-dropdown');
+
+        toggleButton.addEventListener('click', () => {
+        dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+        });
+    </script>
+    <script src="welcome-username.js"></script>
+    <script src="logout.js"></script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>飛騰家電 - 報修</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .form-group { margin-bottom: 15px; }
+        .hidden { display: none; }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-left">
+            <img src="logo1.png" alt="飛騰家電logo" class="logo" />
+            <span class="username">歡迎，會員名字</span>
+        </div>
+        <div class="nav-right">
+            <a href="home.html" class="nav-link">首頁</a>
+            <a href="repair_pending.html" class="nav-link">報修</a>
+            <a href="repair_checking.html" class="nav-link">報修查詢</a>
+            <a href="repair_done.html" class="nav-link">報修紀錄</a>
+            <a href="history.html" class="nav-link">購買紀錄</a>
+            <a href="info.html" class="nav-link">會員資料</a>
+            <a href="#" class="nav-link" onclick="logout()">登出</a>
+        </div>
+        <!-- 手機版 -->
+        <div class="mobile-menu">
+            <button id="menu-toggle">☰</button>
+            <div id="mobile-dropdown" class="mobile-dropdown">
+                <a href="home.html">首頁</a>
+                <a href="repair_pending.html">報修</a>
+                <a href="repair_checking.html">報修查詢</a>
+                <a href="repair_done.html">報修紀錄</a>
+                <a href="history.html">購買歷史</a>
+                <a href="info.html">會員資料</a>
+                <a href="index.html">登出</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-title">產品報修</div>
+    
+    <div class="repair-form">
+        <form id="repair-form">
+            <div class="form-group">
+                <label for="username">客戶姓名：</label>
+                <input type="text" id="username" name="username" value="" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">客戶電話：</label>
+                <input type="text" id="phone" name="phone" value="" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="product-id">商品名稱：序號</label>
+                <select id="product-id" name="product-id"onchange="toggleCustomProductInput()" required style="margin-bottom:12px;">
+                    
+                </select>
+                <input type="text" id="custom-product" name="custom-product" placeholder="請輸入商品名稱與序號" class="hidden" style="margin-bottom:12px;"/>
+            </div>
+            
+            <div class="form-group">
+                <label for="repair-method">報修方式：</label>
+                <select id="repair-method" name="repair-method" onchange="toggleRepairMethod()" required>
+                    <option value="">請選擇</option>
+                    <option value="phone">電話聯絡</option>
+                    <option value="self">自行報修</option>
+                </select>
+            </div>
+            <div class="form-group hidden" id="callContentGroup">
+                <label for="call-content">電話聯絡內容：</label>
+                <textarea id="call-content" name="call-content" rows="8" cols="80" placeholder="請輸入聯絡內容"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="delivery-method">送修方式：</label>
+                <select id="delivery-method" name="delivery-method" onchange="toggleDeliveryMethod()" required>
+                    <option value="">請選擇維修方式</option>
+                    <option value="home">到府收件</option>
+                    <option value="self">自行送修</option>
+                </select>
+            </div>
+
+            <div class="form-group hidden" id="homeAddressGroup">
+                <label for="home-address">收件地址：</label>
+                <input type="text" id="home-address" name="home-address" placeholder="請輸入您的收件地址">
+            </div>
+            <div class="form-group hidden" id="companyAddressGroup">
+                <p>請將產品寄至以下地址：</p>
+                <p>103台北市大同區承德路三段285號一樓</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">故障描述：</label>
+                <textarea id="description" name="description" rows="8" cols="80" placeholder="請簡述產品目前的異常情況..."></textarea>
+            </div>
+            
+            <button type="submit" class="submit-button">確認報修</button>
+        </form>
+        <p class="note">如有問題請撥打電話：+886 2 2838 1010</p>
+        <a href="home.html" class="back-button">← 回首頁</a>
+    </div>
+
+    <script>
+        window.onload = async function () {
+            const selectElement = document.querySelector('#product-id');
+            const phone = localStorage.getItem('userName');
+            if(!phone){
+                alert('請先登入');
+                window.location.href = 'index.html';
+                return;
+            }
+            try {
+              const memberRes = await fetch('/api/proxy-query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Account_Name: phone })
+              });
+            
+              if (memberRes.ok) {
+                const memberData = await memberRes.json();
+                document.getElementById('username').value = memberData?.Name || '';
+                document.getElementById('phone').value = memberData?.Account_Name || '';
+                document.getElementById('home-address').value = memberData?.Address || '';
+              } else {
+                console.error('會員資料載入失敗');
+              }
+            } catch (error) {
+              console.error('載入會員資料時發生錯誤', error);
+            }
+            let productData = localStorage.getItem('productData');
+                if (productData) {
+                    productData = JSON.parse(productData);  // 解析資料
+                    // 清空下拉選單
+                    selectElement.innerHTML = '';  // 清除現有的選項
+                
+                    // 動態填充下拉選單
+                    productData.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.Product_No;  // 產品序號作為選項值
+                    option.textContent = `${product.Product_Name}：${product.Product_No}`;  // 顯示產品名稱和產品序號
+
+                    option.dataset.orderNo = product.Order_No;
+                    option.dataset.productName = product.Product_Name;
+                    option.dataset.productSn = product.Product_No;  
+                    selectElement.appendChild(option);
+                    });
+                }
+                else{
+                    // 發送請求到後端 API 查詢訂單資料
+                    const response = await fetch('/api/proxy-create_repair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ Account_Name: phone })
+                    });
+            
+                    if (response.ok) {
+                        const data = await response.json();
+                        localStorage.setItem('productData', JSON.stringify(data));
+                        // 清空下拉選單
+                        const selectElement = document.querySelector('#product-id');
+                        selectElement.innerHTML = '';  // 清除現有的選項
+            
+                        // 動態填充下拉選單
+                        data.forEach(product => {
+                        const option = document.createElement('option');
+                        option.value = product.Product_No;  // 產品序號作為選項值
+                        option.textContent = `${product.Product_Name}：${product.Product_No}`;  // 顯示產品名稱和產品序號
+                        
+                        option.dataset.orderNo = product.Order_No;
+                        option.dataset.productName = product.Product_Name;
+                        option.dataset.productSn = product.Product_No;  
+                        selectElement.appendChild(option);
+                        });
+                    } else {
+                        console.error('查詢失敗');
+                    }
+                }
+            const customOption = document.createElement('option');
+            customOption.value = 'custom';
+            customOption.textContent = '自行輸入';
+            selectElement.appendChild(customOption);
+        };
+        function toggleCustomProductInput() {
+            const select = document.getElementById('product-id');
+            const customInput = document.getElementById('custom-product');
+            if (select.value === 'custom') {
+            customInput.classList.remove('hidden');
+            } else {
+            customInput.classList.add('hidden');
+            }
+        }
+        function toggleRepairMethod() {
+            const method = document.getElementById("repair-method").value;
+            const callContent = document.getElementById("callContentGroup");
+            callContent.classList.toggle("hidden", method !== "phone");
+        }
+        function toggleDeliveryMethod() {
+            const method = document.getElementById("delivery-method").value;
+            document.getElementById("homeAddressGroup").classList.toggle("hidden", method !== "home");
+            document.getElementById("companyAddressGroup").classList.toggle("hidden", method !== "self");
+        }
+        const toggleButton = document.getElementById('menu-toggle');
+        const dropdown = document.getElementById('mobile-dropdown');
+        toggleButton.addEventListener('click', () => {
+            dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+        });
+        document.getElementById('repair-form').addEventListener('submit', async function (e) {
+        e.preventDefault(); // 防止表單跳頁
+        
+        const select = document.getElementById('product-id');
+        const selectedOption = select.options[select.selectedIndex];
+        
+        const repairMethodSelect = document.getElementById('repair-method');
+        const repairMethodText = repairMethodSelect.options[repairMethodSelect.selectedIndex].text;
+        
+        const deliveryMethodSelect = document.getElementById('delivery-method');
+        const deliveryMethodText = deliveryMethodSelect.options[deliveryMethodSelect.selectedIndex].text;
+
+        let Order_No = selectedOption.dataset?.orderNo || '';
+        let Product_Name = selectedOption.dataset?.productName || '';
+        let Product_No = selectedOption.dataset?.productSn || '';
+        let Product_SN = selectedOption.dataset?.productSn || '';
+        
+        if (select.value === 'custom') {
+            const customValue = document.getElementById('custom-product').value;
+            Product_No = customValue;
+            Product_SN = customValue;
+            Order_No = ''; 
+        }
+        const data = {
+          Account_Name: document.getElementById('phone').value,
+          Name: document.getElementById('username').value,
+          Telphone: document.getElementById('phone').value,
+          Adress: document.getElementById('home-address').value,
+          Contact_Details: repairMethodSelect.value === 'phone' ? document.getElementById('call-content').value : '',
+          Fault_Description: document.getElementById('description').value,
+          Repair_Method: repairMethodText,
+          Repair_Type: deliveryMethodText,
+          Order_No,
+          Product_No,
+          Product_Name,
+          Product_SN,
+        };
+        
+        try {
+          const response = await fetch('/api/proxy-create_repair_insert', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+        
+          const result = await response.json();
+        
+          if (response.ok) {
+            alert('報修成功！單號：' + result.Repair_No);
+            try{
+                await fetch('/api/proxy-discord-notify',{
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        Repair_No: result.Repair_No,
+                        Name: data.Name,
+                        Telephone: data.Telephone
+                    })
+                });
+            }catch(err){
+                console.warn("Discord Webhook 發送失敗", err);
+            }
+        
+          } else {
+            alert('報修失敗：' + (result.message || '請稍後再試'));
+            console.error('詳細錯誤：', result);
+          }
+        } catch (err) {
+          console.error('發生錯誤：', err);
+          alert('送出失敗，請檢查網路連線');
+        }
+        });
+    </script>
+    <script src="welcome-username.js"></script>
+    <script src="logout.js"></script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>飛騰家電 - 報修</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-left">
+            <img src="logo1.png" alt="飛騰家電logo" class="logo" />
+            <span class="username"></span>
+        </div>
+        <div class="nav-right">
+            <a href="home.html" class="nav-link">首頁</a>
+            <a href="repair_pending.html" class="nav-link">報修</a>
+            <a href="repair_checking.html" class="nav-link">報修查詢</a>
+            <a href="repair_done.html" class="nav-link">報修紀錄</a>
+            <a href="history.html" class="nav-link">購買紀錄</a>
+            <a href="info.html" class="nav-link">會員資料</a>
+            <a href="#" class="nav-link" onclick="logout()">登出</a>
+        </div>
+        <!-- 手機版本 -->
+        <div class="mobile-menu">
+            <button id="menu-toggle">☰</button>
+            <div id="mobile-dropdown" class="mobile-dropdown">
+                <a href="home.html">首頁</a>
+                <a href="repair_pending.html">報修</a>
+                <a href="repair_checking.html">報修查詢</a>
+                <a href="repair_done.html">報修紀錄</a>
+                <a href="history.html">購買歷史</a>
+                <a href="info.html">會員資料</a>
+                <a href="index.html">登出</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-title">會員資料</div>
+
+    <div class="query-content">
+        <div class="info-box">
+          <p>姓名：<span id="name"></span></p>
+          <p>電話號碼：<span id="phone"></span></p>
+          <p>地址：<span id="address"></span></p>
+        </div>
+        <a href="change_password.html" class="nav-link">修改密碼</a><br>
+        <a href="home.html" class="back-button">← 回首頁</a>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const accountName = localStorage.getItem("userName");
+          const displayName = localStorage.getItem("displayName");
+          const displayPhone = localStorage.getItem("displayPhone");
+          const displayAddress = localStorage.getItem("displayAddress");
+        
+          const nameEl = document.querySelector('#name');
+          const phoneEl = document.querySelector('#phone');
+          const addressEl = document.querySelector('#address');
+        
+          if (!accountName) {
+            nameEl.textContent = "訪客";
+            phoneEl.textContent = "未提供";
+            addressEl.textContent = "未提供";
+            return;
+          }
+        
+          if (displayName && displayPhone && displayAddress) {
+            nameEl.textContent = `${displayName}`;
+            phoneEl.textContent = `${displayPhone}`;
+            addressEl.textContent = `${displayAddress}`;
+          }
+        
+          fetch('/api/proxy-query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ Account_Name: accountName })
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.Result === 0 && data.Name && data.MobilePhone && data.Address) {
+                localStorage.setItem("displayName", data.Name);
+                localStorage.setItem("displayPhone", data.MobilePhone);
+                localStorage.setItem("displayAddress", data.Address);
+        
+                nameEl.textContent = `${data.Name}`;
+                phoneEl.textContent = `${data.MobilePhone}`;
+                addressEl.textContent = `${data.Address}`;
+              } else {
+                nameEl.textContent = "未知";
+                phoneEl.textContent = "未知";
+                addressEl.textContent = "未知";
+              }
+            })
+            .catch(err => {
+              console.error("查詢會員錯誤：", err);
+              nameEl.textContent = "未知";
+              phoneEl.textContent = "未知";
+              addressEl.textContent = "未知";
+            });
+        });
+    </script>
+    <script>
+        const toggleButton = document.getElementById('menu-toggle');
+        const dropdown = document.getElementById('mobile-dropdown');
+
+        toggleButton.addEventListener('click', () => {
+        dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+        });
+    </script>
+<script src="welcome-username.js"></script>
+<script src="logout.js"></script>
+</body>
+</html>

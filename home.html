@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>飛騰家電 - 首頁</title>
+  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <div class="navbar">
+    <div class="nav-left">
+      <img src="logo1.png" alt="飛騰家電logo" class="logo" />
+      <span class="username"></span>
+    </div>
+  </div>
+
+  <div class="page-title">會員功能首頁</div>
+
+  <div class="card-wrapper">
+    <div class="menu-card-container">
+      <a href="repair_pending.html" class="big-card query">報修</a>
+      <a href="repair_checking.html" class="big-card repair">報修查詢</a>
+      <a href="repair_done.html" class="big-card repair">報修紀錄</a>
+      <a href="history.html" class="big-card repair">購買紀錄</a>
+      <a href="info.html" class="big-card repair">會員資料</a>
+      <a href="#" class="big-card repair" onclick="logout()">登出</a>
+    </div>
+  </div>
+<script>
+    window.onload = async function () {
+      const phone = localStorage.getItem('userName');
+      if(!phone){
+          alert('請先登入');
+          window.location.href = 'index.html';
+          return;
+      }
+    };
+</script>
+<script src="welcome-username.js"></script>
+<script src="logout.js"></script>
+</body>
+</html>

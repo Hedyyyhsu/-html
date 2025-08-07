@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>飛騰家電 - 會員註冊</title>
+  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    .verification-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .verification-group input {
+      flex: 1;
+    }
+    .get-code-btn {
+      padding: 5px 10px;
+      background-color: #D2A679;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="logo1.png" alt="飛騰家電logo" class="logo">
+    <h2>會員註冊</h2>
+    <form onsubmit="event.preventDefault(); confirmRegister();" class="login-form">
+      <div class="form-group">
+        <label for="name">姓名：</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <div class="form-group">
+        <label for="phone">手機號碼：</label>
+        <input type="text" id="phone" name="phone" required>
+      </div>
+      <div class="form-group">
+        <label for="password">密碼：</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <div class="form-group">
+        <label for="confirm-password">確認密碼：</label>
+        <input type="password" id="confirm-password" name="confirm-password" required>
+      </div>
+      <div class="form-group">
+        <label for="verification">驗證碼：</label>
+        <div class="verification-group">
+          <input type="text" id="verification" name="verification" required>
+          <button type="button" class="get-code-btn" onclick="getCode()">取得驗證碼</button>
+        </div>
+      </div>
+      <button type="submit" class="submit-button">註冊</button>
+    </form>
+    <a href="index.html" class="back-button">← 返回登入</a>
+  </div>
+
+  <script>
+    function getCode() {
+      alert("驗證碼已發送！（模擬功能）");
+    }
+
+    async function confirmRegister() {
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const pwd = document.getElementById("password").value;
+      const confirm = document.getElementById("confirm-password").value;
+      const code = document.getElementById("verification").value;
+  
+      if (!name || !phone || !pwd || !confirm || !code) {
+        alert("請完整填寫所有欄位！");
+        return false;
+      }
+  
+      if (pwd !== confirm) {
+        alert("兩次輸入的密碼不一致！");
+        return false;
+      }
+  
+      // 步驟 1：查詢此手機號碼是否已註冊
+      try {
+        const checkRes = await fetch('/api/proxy-check-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ Account_Name: phone })
+        });
+  
+        const checkData = await checkRes.json();
+        if (checkData.registered) {
+          alert("此手機號碼已註冊，請改用其他號碼");
+          return;
+        }
+      } catch (error) {
+        alert("查詢帳號發生錯誤！");
+        return false;
+      }
+  
+      try {
+        const registerRes = await fetch('/api/proxy-register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            Account_Name: phone,
+            Password: pwd,
+            Name: name,
+            Phone_Check: 1  // 找到OTP方法要改掉
+          })
+        });
+  
+        const registerData = await registerRes.json();
+        if (registerRes.ok) {
+          alert("註冊成功！");
+          window.location.href = "index.html";
+          return false;
+        } else {
+          alert("註冊失敗：" + registerData.message);
+          return false;
+        }
+      } catch (error) {
+        alert("註冊時發生錯誤！");
+        return false;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>飛騰家電 - 會員登入</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <div class="container">
+    <img src="logo1.png" alt="飛騰家電logo" class="logo">
+    <h2>會員登入</h2>
+    <form onsubmit="return redirectToHome()" class="login-form">
+        <div class="form-group">
+            <label for="phone">帳號：</label>
+            <input type="text" id="phone" name="phone" required placeholder="電話號碼">
+        </div>
+        <div class="form-group">
+            <label for="password">密碼：</label>
+            <input type="password" id="password" name="password" required placeholder="請輸入...">
+        </div>
+        <button type="submit" class="submit-button"  id="loginButton" onclick="login()">確認</button>
+        <a href="index.html" class="submit-button">忘記密碼</a>
+        <a href="register.html" class="submit-button">會員註冊</a>
+    </form>        
+  </div>
+  <!-- 加載提示 -->
+  <div id="loading" style="display: none;">正在處理請求...</div>
+
+  <script>
+    async function login() {
+      event.preventDefault(); // 阻止表單送出導致重新整理
+      const phone = document.getElementById("phone").value.trim();
+      const password = document.getElementById("password").value.trim();  // 讀取密碼欄位
+
+      // 輸入驗證：檢查帳號與密碼是否為空
+      if (!phone || !password) {
+        alert('帳號或密碼不能為空');
+        return;
+      }
+
+      const loginPayload = {
+        Account_Name: phone,
+        Password: password
+      };
+
+      try {
+        const response = await fetch('/api/proxy-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(loginPayload)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alert('登入成功！');
+          localStorage.setItem('userName', phone);
+          redirectToHome();
+        } else {
+          alert('登入失敗：' + result.message);
+        }
+      } catch (error) {
+        console.error("登入錯誤：", error);
+        alert("登入過程中發生錯誤，請稍後再試");
+      }
+
+      return false;
+    }
+    function redirectToHome() {
+        window.location.href = "home.html";
+        return false; // 阻止表單重新整理
+    }
+  </script>
+  <script>
+    const toggleButton = document.getElementById('menu-toggle');
+    const dropdown = document.getElementById('mobile-dropdown');
+
+    toggleButton.addEventListener('click', () => {
+      dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+    });
+  </script>
+</body>
+</html>
